@@ -4,10 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>직원 관리 시스템</title>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     
     <!-- 폰트어썸 아이콘 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -75,6 +71,26 @@
             color: #333;
         }
         
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .login-input {
+            padding: 12px;
+            border: 1px solid #d1d3e2;
+            border-radius: 50px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .login-input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+        
         .login-button {
             background-color: #4285F4;
             color: white;
@@ -85,6 +101,7 @@
             font-size: 16px;
             display: flex;
             align-items: center;
+            justify-content: center;
             margin: 0 auto;
             transition: all 0.3s;
         }
@@ -140,6 +157,12 @@
             border-radius: 50%;
             margin-right: 10px;
             object-fit: cover;
+            background-color: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #555;
         }
         
         .user-name {
@@ -315,6 +338,20 @@
             text-decoration: underline;
         }
         
+        .delete-btn {
+            color: var(--danger-color);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.3s;
+            margin-left: 10px;
+        }
+        
+        .delete-btn:hover {
+            transform: scale(1.2);
+        }
+        
         /* 애니메이션 이모티콘 */
         .emoji-container {
             position: fixed;
@@ -398,6 +435,111 @@
                 text-align: center;
             }
         }
+        
+        /* 모달 창 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            width: 90%;
+            max-width: 500px;
+            animation: fadeIn 0.3s;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #888;
+            transition: color 0.3s;
+        }
+        
+        .close-modal:hover {
+            color: #333;
+        }
+        
+        /* 사용자 설정 화면 */
+        .admin-panel {
+            background-color: white;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+        
+        .admin-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: var(--dark-color);
+        }
+        
+        .staff-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .staff-card {
+            background-color: #f8f9fc;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--primary-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .staff-info {
+            flex: 1;
+        }
+        
+        .staff-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .staff-email {
+            font-size: 12px;
+            color: #858796;
+        }
+        
+        .staff-grade {
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            background-color: var(--primary-color);
+        }
     </style>
 </head>
 <body>
@@ -409,9 +551,13 @@
             <div class="emoji-animation" style="font-size: 80px; margin: 30px 0; animation: bounce 2s infinite;">
                 📊
             </div>
-            <button id="loginButton" class="login-button animate__animated animate__fadeIn animate__delay-2s">
-                <i class="fab fa-google"></i> Google로 로그인
-            </button>
+            <form id="loginForm" class="login-form animate__animated animate__fadeIn animate__delay-2s">
+                <input type="text" id="loginName" class="login-input" placeholder="이름" required>
+                <input type="email" id="loginEmail" class="login-input" placeholder="이메일" required>
+                <button type="submit" class="login-button">
+                    <i class="fas fa-sign-in-alt"></i> 로그인
+                </button>
+            </form>
         </div>
     </div>
     
@@ -423,10 +569,18 @@
                     <i class="fas fa-chart-line"></i> 직원 관리 시스템
                 </div>
                 <div class="user-info">
-                    <img id="userAvatar" src="" alt="프로필 사진" class="avatar">
+                    <div id="userAvatar" class="avatar">A</div>
                     <span id="userName" class="user-name">사용자 이름</span>
                     <span id="userGrade" class="badge">등급</span>
                     <button id="logoutButton" class="logout-button">로그아웃</button>
+                </div>
+            </div>
+            
+            <!-- 관리자 패널 (관리자로 로그인했을 때만 표시) -->
+            <div id="adminPanel" class="admin-panel" style="display:none;">
+                <h2 class="admin-title">직원 현황</h2>
+                <div id="staffList" class="staff-list">
+                    <!-- 직원 목록이 여기에 동적으로 추가됩니다 -->
                 </div>
             </div>
             
@@ -651,36 +805,27 @@
     </div>
     
     <script>
-        // Firebase 초기화
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyBJlvDWhVHcPC1Pq-m_M_ONXSQN9Lq8MTs",
-  authDomain: "my-webapp-3cdfa.firebaseapp.com",
-  projectId: "my-webapp-3cdfa",
-  storageBucket: "my-webapp-3cdfa.firebasestorage.app",
-  messagingSenderId: "392977162126",
-  appId: "1:392977162126:web:57e0858d0678e0b9e2cedf"
-};
-
-        // Firebase 초기화
-        firebase.initializeApp(firebaseConfig);
-        
-        // Firebase 서비스 참조
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-        
         // DOM 요소
         const loginContainer = document.getElementById('loginContainer');
         const dashboardContainer = document.getElementById('dashboardContainer');
-        const loginButton = document.getElementById('loginButton');
+        const loginForm = document.getElementById('loginForm');
+        const loginName = document.getElementById('loginName');
+        const loginEmail = document.getElementById('loginEmail');
         const logoutButton = document.getElementById('logoutButton');
         const userAvatar = document.getElementById('userAvatar');
         const userName = document.getElementById('userName');
         const userGrade = document.getElementById('userGrade');
-        const saveAssignmentBtn = document.getElementById('saveAssignment');
+        const adminPanel = document.getElementById('adminPanel');
+        const staffList = document.getElementById('staffList');
         const assignmentList = document.getElementById('assignmentList');
         const animatedEmoji = document.getElementById('animatedEmoji');
         const toast = document.getElementById('toast');
+        
+        // 현재 사용자 정보
+        let currentUser = null;
+        
+        // 관리자 이메일 (이 이메일로 로그인하면 관리자 권한을 가짐)
+        const adminEmail = 'admin@example.com';
         
         // 등급 계산 기준
         const calculateGrade = (userData) => {
@@ -737,7 +882,8 @@ const firebaseConfig = {
             if (type === 'success') {
                 toastElement.className = 'toast toast-success';
                 toastIcon.className = 'fas fa-check-circle toast-icon';
-toastElement.className = 'toast toast-error';
+            } else if (type === 'error') {
+                toastElement.className = 'toast toast-error';
                 toastIcon.className = 'fas fa-exclamation-circle toast-icon';
             }
             
@@ -748,34 +894,42 @@ toastElement.className = 'toast toast-error';
             }, 3000);
         };
         
-        // 사용자 데이터 불러오기
-        const loadUserData = async (userId) => {
+        // 로컬 스토리지에서 사용자 정보 불러오기
+        const loadUserData = (userId) => {
             try {
-                const doc = await db.collection('users').doc(userId).get();
-                return doc.exists ? doc.data() : null;
+                const userData = localStorage.getItem(`userData_${userId}`);
+                return userData ? JSON.parse(userData) : null;
             } catch (error) {
                 console.error('사용자 데이터 로드 오류:', error);
                 return null;
             }
         };
         
-        // 사용자 데이터 저장
-        const saveUserData = async (userId, field, data) => {
+        // 로컬 스토리지에 사용자 정보 저장
+        const saveUserData = (userId, field, data) => {
             try {
-                await db.collection('users').doc(userId).set({
-                    [field]: data,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
+                // 기존 데이터 불러오기
+                let userData = loadUserData(userId) || {};
                 
-                // 사용자 데이터 다시 로드 및 등급 업데이트
-                const userData = await loadUserData(userId);
+                // 새 데이터 업데이트
+                userData[field] = data;
+                userData.updatedAt = new Date().toISOString();
+                
+                // 로컬 스토리지에 저장
+                localStorage.setItem(`userData_${userId}`, JSON.stringify(userData));
+                
+                // 등급 계산 및 저장
                 const grade = calculateGrade(userData);
+                userData.grade = grade;
+                localStorage.setItem(`userData_${userId}`, JSON.stringify(userData));
                 
-                await db.collection('users').doc(userId).set({
-                    grade: grade,
-                }, { merge: true });
-                
+                // UI 업데이트
                 userGrade.textContent = grade;
+                
+                // 관리자면 직원 목록 업데이트
+                if (currentUser && currentUser.email === adminEmail) {
+                    loadStaffList();
+                }
                 
                 return true;
             } catch (error) {
@@ -784,24 +938,70 @@ toastElement.className = 'toast toast-error';
             }
         };
         
-        // 과제 목록 불러오기
-        const loadAssignments = async (userId) => {
+        // 모든 사용자 데이터 불러오기 (관리자 전용)
+        const loadAllUsers = () => {
+            const users = [];
+            // 로컬 스토리지에서 모든 사용자 데이터 찾기
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('userData_')) {
+                    try {
+                        const userData = JSON.parse(localStorage.getItem(key));
+                        const userId = key.replace('userData_', '');
+                        users.push({
+                            id: userId,
+                            ...userData
+                        });
+                    } catch (error) {
+                        console.error('사용자 데이터 파싱 오류:', error);
+                    }
+                }
+            }
+            return users;
+        };
+        
+        // 과제 저장 (로컬 스토리지 사용)
+        const saveAssignment = (userId, assignment) => {
             try {
-                const snapshot = await db.collection('assignments')
-                    .where('userId', '==', userId)
-                    .orderBy('createdAt', 'desc')
-                    .get();
+                // 기존 과제 불러오기
+                const assignmentsString = localStorage.getItem(`assignments_${userId}`);
+                const assignments = assignmentsString ? JSON.parse(assignmentsString) : [];
+                
+                // 새 과제에 ID와 날짜 추가
+                assignment.id = Date.now().toString();
+                assignment.createdAt = new Date().toISOString();
+                
+                // 과제 목록에 추가
+                assignments.push(assignment);
+                
+                // 로컬 스토리지에 저장
+                localStorage.setItem(`assignments_${userId}`, JSON.stringify(assignments));
+                
+                return true;
+            } catch (error) {
+                console.error('과제 저장 오류:', error);
+                return false;
+            }
+        };
+        
+        // 과제 목록 불러오기
+        const loadAssignments = (userId) => {
+            try {
+                const assignmentsString = localStorage.getItem(`assignments_${userId}`);
+                const assignments = assignmentsString ? JSON.parse(assignmentsString) : [];
                 
                 assignmentList.innerHTML = '<h3 style="margin-top: 20px; margin-bottom: 10px;">내 과제 목록</h3>';
                 
-                if (snapshot.empty) {
+                if (assignments.length === 0) {
                     assignmentList.innerHTML += '<p>등록된 과제가 없습니다.</p>';
                     return;
                 }
                 
-                snapshot.forEach(doc => {
-                    const assignment = doc.data();
-                    const date = assignment.createdAt ? new Date(assignment.createdAt.toDate()) : new Date();
+                // 최신 순으로 정렬
+                assignments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                
+                assignments.forEach(assignment => {
+                    const date = new Date(assignment.createdAt);
                     const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
                     
                     const assignmentItem = document.createElement('div');
@@ -812,12 +1012,26 @@ toastElement.className = 'toast toast-error';
                             <div class="assignment-date">제출일: ${formattedDate}</div>
                             ${assignment.dueDate ? `<div class="assignment-date">마감일: ${assignment.dueDate}</div>` : ''}
                         </div>
-                        <a href="${assignment.link}" target="_blank" class="assignment-link">
-                            <i class="fas fa-external-link-alt"></i> 보기
-                        </a>
+                        <div>
+                            <a href="${assignment.link}" target="_blank" class="assignment-link">
+                                <i class="fas fa-external-link-alt"></i> 보기
+                            </a>
+                            <button class="delete-btn" data-id="${assignment.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
                     `;
                     
                     assignmentList.appendChild(assignmentItem);
+                });
+                
+                // 삭제 버튼에 이벤트 리스너 추가
+                const deleteButtons = document.querySelectorAll('.delete-btn');
+                deleteButtons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        const assignmentId = this.getAttribute('data-id');
+                        deleteAssignment(userId, assignmentId);
+                    });
                 });
             } catch (error) {
                 console.error('과제 목록 로드 오류:', error);
@@ -825,27 +1039,156 @@ toastElement.className = 'toast toast-error';
             }
         };
         
-        // 구글 로그인
-        loginButton.addEventListener('click', () => {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider)
-                .catch(error => {
-                    console.error('로그인 오류:', error);
-                    showToast('로그인 중 오류가 발생했습니다: ' + error.message, 'error');
-                });
+        // 과제 삭제
+        const deleteAssignment = (userId, assignmentId) => {
+            try {
+                const assignmentsString = localStorage.getItem(`assignments_${userId}`);
+                if (!assignmentsString) return false;
+                
+                let assignments = JSON.parse(assignmentsString);
+                assignments = assignments.filter(assignment => assignment.id !== assignmentId);
+                
+                localStorage.setItem(`assignments_${userId}`, JSON.stringify(assignments));
+                
+                // 목록 다시 불러오기
+                loadAssignments(userId);
+                
+                showToast('과제가 삭제되었습니다');
+                return true;
+            } catch (error) {
+                console.error('과제 삭제 오류:', error);
+                showToast('과제 삭제 중 오류가 발생했습니다', 'error');
+                return false;
+            }
+        };
+        
+        // 직원 목록 불러오기 (관리자 전용)
+        const loadStaffList = () => {
+            if (!currentUser || currentUser.email !== adminEmail) return;
+            
+            const users = loadAllUsers();
+            staffList.innerHTML = '';
+            
+            if (users.length === 0) {
+                staffList.innerHTML = '<p>등록된 직원이 없습니다.</p>';
+                return;
+            }
+            
+            users.forEach(user => {
+                if (!user.name) return; // 이름이 없으면 건너뛰기
+                
+                const staffCard = document.createElement('div');
+                staffCard.className = 'staff-card';
+                staffCard.innerHTML = `
+                    <div class="staff-info">
+                        <div class="staff-name">${user.name}</div>
+                        <div class="staff-email">${user.email || '이메일 없음'}</div>
+                    </div>
+                    <div class="staff-grade">${user.grade || 'New'}</div>
+                `;
+                
+                staffList.appendChild(staffCard);
+            });
+        };
+        
+        // 로그인 처리
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = loginName.value.trim();
+            const email = loginEmail.value.trim();
+            
+            if (!name || !email) {
+                showToast('이름과 이메일을 모두 입력해주세요', 'error');
+                return;
+            }
+            
+            // 사용자 ID 생성 (이메일 기반)
+            const userId = email.replace(/[^a-zA-Z0-9]/g, '_');
+            
+            // 사용자 정보 저장
+            let userData = loadUserData(userId) || {};
+            userData.name = name;
+            userData.email = email;
+            userData.lastLogin = new Date().toISOString();
+            
+            localStorage.setItem(`userData_${userId}`, JSON.stringify(userData));
+            
+            // 현재 사용자 설정
+            currentUser = {
+                id: userId,
+                name: name,
+                email: email
+            };
+            
+            // 세션 스토리지에 로그인 상태 저장 (페이지 새로고침해도 로그인 유지)
+            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+            
+            // 사용자 정보 표시
+            displayUserInfo(currentUser, userData);
+            
+            // 관리자 확인
+            checkAdminStatus(email);
+            
+            // 과제 목록 불러오기
+            loadAssignments(userId);
+            
+            // 화면 전환
+            loginContainer.style.display = 'none';
+            dashboardContainer.style.display = 'block';
+            
+            showToast(`${name}님, 환영합니다!`);
         });
         
-        // 로그아웃
-        logoutButton.addEventListener('click', () => {
-            auth.signOut()
-                .catch(error => {
-                    console.error('로그아웃 오류:', error);
-                    showToast('로그아웃 중 오류가 발생했습니다: ' + error.message, 'error');
-                });
+        // 로그아웃 처리
+        logoutButton.addEventListener('click', function() {
+            // 세션 스토리지에서 로그인 정보 삭제
+            sessionStorage.removeItem('currentUser');
+            
+            // 현재 사용자 초기화
+            currentUser = null;
+            
+            // 화면 전환
+            dashboardContainer.style.display = 'none';
+            loginContainer.style.display = 'flex';
+            
+            // 입력 필드 초기화
+            loginName.value = '';
+            loginEmail.value = '';
+            
+            showToast('로그아웃되었습니다');
         });
+        
+        // 사용자 정보 표시
+        const displayUserInfo = (user, userData) => {
+            // 아바타 이니셜 표시 (이름의 첫 글자)
+            const initial = user.name.charAt(0).toUpperCase();
+            userAvatar.textContent = initial;
+            
+            // 사용자 이름 표시
+            userName.textContent = user.name;
+            
+            // 등급 계산 및 표시
+            const grade = calculateGrade(userData);
+            userGrade.textContent = grade;
+            
+            // 데이터베이스에 등급 저장
+            userData.grade = grade;
+            localStorage.setItem(`userData_${user.id}`, JSON.stringify(userData));
+        };
+        
+        // 관리자 상태 확인 및 UI 업데이트
+        const checkAdminStatus = (email) => {
+            if (email === adminEmail) {
+                adminPanel.style.display = 'block';
+                loadStaffList();
+            } else {
+                adminPanel.style.display = 'none';
+            }
+        };
         
         // 출결 저장
-        document.getElementById('saveAttendance').addEventListener('click', async () => {
+        document.getElementById('saveAttendance').addEventListener('click', function() {
             const status = document.getElementById('attendanceStatus').value;
             const reason = document.getElementById('attendanceReason').value;
             
@@ -857,10 +1200,10 @@ toastElement.className = 'toast toast-error';
             const data = {
                 status,
                 reason,
-                date: firebase.firestore.FieldValue.serverTimestamp()
+                date: new Date().toISOString()
             };
             
-            const success = await saveUserData(currentUser.uid, 'attendance', data);
+            const success = saveUserData(currentUser.id, 'attendance', data);
             
             if (success) {
                 showToast('출결 정보가 저장되었습니다');
@@ -870,7 +1213,7 @@ toastElement.className = 'toast toast-error';
         });
         
         // 결제 정보 저장
-        document.getElementById('savePayment').addEventListener('click', async () => {
+        document.getElementById('savePayment').addEventListener('click', function() {
             const status = document.getElementById('paymentStatus').value;
             const amount = document.getElementById('paymentAmount').value;
             
@@ -887,10 +1230,10 @@ toastElement.className = 'toast toast-error';
             const data = {
                 status,
                 amount: parseFloat(amount),
-                date: firebase.firestore.FieldValue.serverTimestamp()
+                date: new Date().toISOString()
             };
             
-            const success = await saveUserData(currentUser.uid, 'payment', data);
+            const success = saveUserData(currentUser.id, 'payment', data);
             
             if (success) {
                 showToast('결제 정보가 저장되었습니다');
@@ -900,7 +1243,7 @@ toastElement.className = 'toast toast-error';
         });
         
         // 필기 진도 저장
-        document.getElementById('saveWritten').addEventListener('click', async () => {
+        document.getElementById('saveWritten').addEventListener('click', function() {
             const progress = document.getElementById('writtenProgress').value;
             const score = document.getElementById('writtenScore').value;
             
@@ -917,10 +1260,10 @@ toastElement.className = 'toast toast-error';
             const data = {
                 progress: parseFloat(progress),
                 score: parseFloat(score),
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                updatedAt: new Date().toISOString()
             };
             
-            const success = await saveUserData(currentUser.uid, 'written', data);
+            const success = saveUserData(currentUser.id, 'written', data);
             
             if (success) {
                 showToast('필기 진도 정보가 저장되었습니다');
@@ -930,7 +1273,7 @@ toastElement.className = 'toast toast-error';
         });
         
         // 면접 진도 저장
-        document.getElementById('saveInterview').addEventListener('click', async () => {
+        document.getElementById('saveInterview').addEventListener('click', function() {
             const scale = document.getElementById('interviewScale').value;
             const note = document.getElementById('interviewNote').value;
             
@@ -942,10 +1285,10 @@ toastElement.className = 'toast toast-error';
             const data = {
                 scale,
                 note,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                updatedAt: new Date().toISOString()
             };
             
-            const success = await saveUserData(currentUser.uid, 'interview', data);
+            const success = saveUserData(currentUser.id, 'interview', data);
             
             if (success) {
                 showToast('면접 진도 정보가 저장되었습니다');
@@ -955,7 +1298,7 @@ toastElement.className = 'toast toast-error';
         });
         
         // 체력 현황 저장
-        document.getElementById('saveFitness').addEventListener('click', async () => {
+        document.getElementById('saveFitness').addEventListener('click', function() {
             const level = document.getElementById('fitnessLevel').value;
             const pushups = document.getElementById('pushups').value;
             const situps = document.getElementById('situps').value;
@@ -974,10 +1317,10 @@ toastElement.className = 'toast toast-error';
                 level,
                 pushups: parseInt(pushups),
                 situps: parseInt(situps),
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                updatedAt: new Date().toISOString()
             };
             
-            const success = await saveUserData(currentUser.uid, 'fitness', data);
+            const success = saveUserData(currentUser.id, 'fitness', data);
             
             if (success) {
                 showToast('체력 현황 정보가 저장되었습니다');
@@ -987,7 +1330,7 @@ toastElement.className = 'toast toast-error';
         });
         
         // 자격사항 저장
-        document.getElementById('saveCertificates').addEventListener('click', async () => {
+        document.getElementById('saveCertificates').addEventListener('click', function() {
             const nationalFitness = document.getElementById('nationalFitness').value;
             const koreanLanguage = document.getElementById('koreanLanguage').value;
             const otherCertificates = document.getElementById('otherCertificates').value;
@@ -1001,10 +1344,10 @@ toastElement.className = 'toast toast-error';
                 nationalFitness,
                 koreanLanguage,
                 otherCertificates,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                updatedAt: new Date().toISOString()
             };
             
-            const success = await saveUserData(currentUser.uid, 'certificates', data);
+            const success = saveUserData(currentUser.id, 'certificates', data);
             
             if (success) {
                 showToast('자격사항 정보가 저장되었습니다');
@@ -1014,7 +1357,7 @@ toastElement.className = 'toast toast-error';
         });
         
         // 특이사항 저장
-        document.getElementById('saveNote').addEventListener('click', async () => {
+        document.getElementById('saveNote').addEventListener('click', function() {
             const note = document.getElementById('specialNote').value;
             
             if (!currentUser) {
@@ -1024,10 +1367,10 @@ toastElement.className = 'toast toast-error';
             
             const data = {
                 note,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                updatedAt: new Date().toISOString()
             };
             
-            const success = await saveUserData(currentUser.uid, 'specialNote', data);
+            const success = saveUserData(currentUser.id, 'specialNote', data);
             
             if (success) {
                 showToast('특이사항이 저장되었습니다');
@@ -1037,7 +1380,7 @@ toastElement.className = 'toast toast-error';
         });
         
         // 과제 저장
-        document.getElementById('saveAssignment').addEventListener('click', async () => {
+        document.getElementById('saveAssignment').addEventListener('click', function() {
             const title = document.getElementById('assignmentTitle').value;
             const link = document.getElementById('assignmentLink').value;
             const dueDate = document.getElementById('assignmentDueDate').value;
@@ -1061,16 +1404,16 @@ toastElement.className = 'toast toast-error';
                 return;
             }
             
-            try {
-                await db.collection('assignments').add({
-                    userId: currentUser.uid,
-                    title,
-                    link,
-                    dueDate,
-                    description,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                
+            const assignment = {
+                title,
+                link,
+                dueDate,
+                description
+            };
+            
+            const success = saveAssignment(currentUser.id, assignment);
+            
+            if (success) {
                 showToast('과제가 성공적으로 저장되었습니다');
                 
                 // 입력 필드 초기화
@@ -1080,10 +1423,9 @@ toastElement.className = 'toast toast-error';
                 document.getElementById('assignmentDescription').value = '';
                 
                 // 과제 목록 다시 불러오기
-                loadAssignments(currentUser.uid);
-            } catch (error) {
-                console.error('과제 저장 오류:', error);
-                showToast('과제 저장 중 오류가 발생했습니다: ' + error.message, 'error');
+                loadAssignments(currentUser.id);
+            } else {
+                showToast('과제 저장 중 오류가 발생했습니다', 'error');
             }
         });
         
@@ -1096,50 +1438,34 @@ toastElement.className = 'toast toast-error';
             animatedEmoji.textContent = emojis[emojiIndex];
         }, 3000);
         
-        // 인증 상태 변경 리스너
-        auth.onAuthStateChanged(async user => {
-            if (user) {
-                // 로그인 상태
-                currentUser = user;
-                
-                // 사용자 정보 표시
-                userAvatar.src = user.photoURL || 'https://via.placeholder.com/40';
-                userName.textContent = user.displayName || '사용자';
-                
-                // Firestore에 사용자 정보 저장
-                await db.collection('users').doc(user.uid).set({
-                    uid: user.uid,
-                    displayName: user.displayName,
-                    email: user.email,
-                    photoURL: user.photoURL,
-                    lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
-                
-                // 사용자 데이터 로드
-                const userData = await loadUserData(user.uid);
-                
-                // 등급 계산 및 표시
-                const grade = calculateGrade(userData);
-                userGrade.textContent = grade;
-                
-                // Firestore에 등급 저장
-                await db.collection('users').doc(user.uid).set({
-                    grade: grade
-                }, { merge: true });
-                
-                // 과제 목록 로드
-                loadAssignments(user.uid);
-                
-                // 화면 전환
-                loginContainer.style.display = 'none';
-                dashboardContainer.style.display = 'block';
-            } else {
-                // 로그아웃 상태
-                currentUser = null;
-                
-                // 화면 전환
-                dashboardContainer.style.display = 'none';
-                loginContainer.style.display = 'flex';
+        // 페이지 로드 시 로그인 상태 확인 (세션 스토리지에서)
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedUser = sessionStorage.getItem('currentUser');
+            
+            if (savedUser) {
+                try {
+                    // 저장된 사용자 정보 불러오기
+                    currentUser = JSON.parse(savedUser);
+                    
+                    // 사용자 데이터 불러오기
+                    const userData = loadUserData(currentUser.id);
+                    
+                    // 사용자 정보 표시
+                    displayUserInfo(currentUser, userData);
+                    
+                    // 관리자 확인
+                    checkAdminStatus(currentUser.email);
+                    
+                    // 과제 목록 불러오기
+                    loadAssignments(currentUser.id);
+                    
+                    // 화면 전환
+                    loginContainer.style.display = 'none';
+                    dashboardContainer.style.display = 'block';
+                } catch (error) {
+                    console.error('로그인 상태 복원 오류:', error);
+                    sessionStorage.removeItem('currentUser');
+                }
             }
         });
     </script>
